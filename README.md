@@ -19,9 +19,3 @@
 ## Motivation
 
 J’ai réalisé ce petit outil, qui m’est utile au quotidien, en utilisant uniquement des LLM et un simple bloc-notes. En seulement 5 minutes – et après plusieurs échanges d’idées et d’analyses – j’ai pu obtenir une première version fonctionnelle **sans taper une seule ligne de code** manuellement !
-
-## Utilisation
-
-1. **Clonage du dépôt :**
-   ```bash
-   git clone https://github.com/votre-nom-dutilisateur/timeflow.git
