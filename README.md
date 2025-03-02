@@ -2,6 +2,8 @@
 
 **TimeFlow** est un outil de gestion du temps pour présentations, développé entièrement avec l'intelligence artificielle (LLM). Ce projet a été réalisé en utilisant uniquement des modèles de langage directement dans le navigateur web. Aucune installation, aucun droit administrateur et aucune librairie externe ne sont requis pour l’utiliser.
 
+<img width="1163" alt="Capture d’écran 2025-03-02 à 08 27 33" src="https://github.com/user-attachments/assets/616ed114-5472-4a7a-9165-f34a56090f43" />
+
 ## Fonctionnalités
 
 - **Planification et suivi des séquences**  
