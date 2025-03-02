@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestionnaire de Temps pour Présentations</title>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2980b9;
+      --warning-color: #e74c3c;
+      --success-color: #2ecc71;
+      --text-color: #2c3e50;
+      --light-bg: #ecf0f1;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f8f9fa;
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--box-shadow);
+    }
+    .setup-panel, .control-panel, .timer-display, .summary-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .setup-panel {
+      background-color: white;
+    }
+    .section-title {
+      color: var(--secondary-color);
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-bottom: 2px solid var(--light-bg);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    label {
+      font-weight: 500;
+    }
+    input, select, button {
+      padding: 10px;
+      border-radius: var(--border-radius);
+      border: 1px solid #ddd;
+      font-size: 1rem;
+    }
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    .btn-success:hover {
+      background-color: #27ae60;
+    }
+    .btn-warning {
+      background-color: var(--warning-color);
+    }
+    .btn-warning:hover {
+      background-color: #c0392b;
+    }
+    .sequences-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .sequence-item {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      background-color: var(--light-bg);
+      border-radius: var(--border-radius);
+    }
+    .sequence-item button {
+      padding: 5px 10px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .timer-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .time-display {
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      text-align: center;
+      transition: color 0.3s;
+    }
+    .time-warning {
+      color: var(--warning-color);
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .progress-container {
+      width: 100%;
+      height: 20px;
+      background-color: var(--light-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+      transition: width 1s linear;
+    }
+    .progress-warning {
+      background-color: var(--warning-color);
+    }
+    .current-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      font-size: 1.2rem;
+    }
+    .current-sequence {
+      font-weight: 600;
+    }
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .stat-card {
+      background-color: var(--light-bg);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      text-align: center;
+    }
+    .stat-title {
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 5px;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .delay {
+      color: var(--warning-color);
+    }
+    .sequence-list {
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .sequence-summary {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .sequence-summary:last-child {
+      border-bottom: none;
+    }
+    .sequence-overrun {
+      color: var(--warning-color);
+      font-weight: 600;
+    }
+    .global-time-container {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: var(--light-bg);
+      border-radius: var(--border-radius);
+      text-align: center;
+    }
+    .global-time {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      margin: 5px 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .global-time-elapsed {
+      color: var(--primary-color);
+    }
+    .global-time-total {
+      color: var(--text-color);
+    }
+    .global-time-label {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    .global-progress-container {
+      width: 100%;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    .sequence-timeline {
+      margin-top: 20px;
+      width: 100%;
+    }
+    .timeline-container {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 10px 1fr;
+      gap: 10px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      position: relative;
+    }
+    .timeline-marker {
+      width: 10px;
+      height: 100%;
+      border-radius: 5px;
+    }
+    .timeline-marker.past {
+      background-color: var(--success-color);
+    }
+    .timeline-marker.current {
+      background-color: var(--primary-color);
+      animation: pulse 2s infinite;
+    }
+    .timeline-marker.future {
+      background-color: #ccc;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    .timeline-content {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .timeline-title {
+      font-weight: 600;
+    }
+    .timeline-speaker {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .timeline-time {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+    .timeline-planned {
+      color: #666;
+    }
+    .timeline-actual {
+      font-weight: 500;
+    }
+    .timeline-actual.overrun {
+      color: var(--warning-color);
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px;
+      background-color: var(--warning-color);
+      color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .notification.show {
+      opacity: 1;
+    }
+    @media (max-width: 768px) {
+      .sequence-item, .sequence-summary {
+        grid-template-columns: 1fr 1fr;
+      }
+      .sequence-item > span:nth-child(3), 
+      .sequence-summary > span:nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      .sequence-item > button, 
+      .sequence-summary > span:nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+      }
+      .tabs {
+        display: flex;
+        margin-bottom: 20px;
+      }
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        background-color: var(--light-bg);
+        cursor: pointer;
+      }
+      .tab.active {
+        background-color: var(--primary-color);
+        color: white;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+    }
+    /* Styles pour l'affichage des pauses dans le résumé */
+    .pause-item {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .pause-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestionnaire de Temps pour Présentations</h1>
+  </header>
+  <div class="tabs">
+    <div class="tab active" data-tab="setup">Configuration</div>
+    <div class="tab" data-tab="timer">Minuteur</div>
+    <div class="tab" data-tab="summary">Résumé</div>
+  </div>
+  <div class="container">
+    <div class="tab-content active" id="setup">
+      <div class="card setup-panel">
+        <div class="section-title">Configuration de la Présentation</div>
+        <div class="input-group">
+          <label for="totalDuration">Durée totale de la réunion (minutes):</label>
+          <input type="number" id="totalDuration" min="10" max="480" value="60">
+        </div>
+        <div class="input-group">
+          <label for="alertTime">Temps d'alerte (minutes avant la fin):</label>
+          <input type="number" id="alertTime" min="1" max="30" value="5">
+        </div>
+        <div class="input-group">
+          <label for="sequenceName">Nom de la séquence:</label>
+          <input type="text" id="sequenceName" placeholder="Ex: Introduction">
+        </div>
+        <div class="input-group">
+          <label for="speakerName">Intervenant (optionnel):</label>
+          <input type="text" id="speakerName" placeholder="Ex: Jean Dupont">
+        </div>
+        <div class="input-group">
+          <label for="sequenceDuration">Durée (minutes):</label>
+          <input type="number" id="sequenceDuration" min="1" max="240" value="10">
+        </div>
+        <button id="addSequence" class="btn-success">Ajouter la séquence</button>
+        <div class="section-title">Séquences planifiées</div>
+        <div id="sequences" class="sequences-container">
+          <!-- Les séquences seront ajoutées ici -->
+        </div>
+        <div class="controls">
+          <button id="startPresentation">Commencer la présentation</button>
+          <button id="clearSequences">Effacer toutes les séquences</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="timer">
+      <div class="card timer-display">
+        <div class="section-title">Minuteur</div>
+        <div class="timer-container">
+          <div class="global-time-container">
+            <div class="global-time-label">Temps global de la réunion:</div>
+            <div class="global-time">
+              <div id="globalElapsed" class="global-time-elapsed">00:00</div>
+              <div class="global-time-separator">/</div>
+              <div id="globalTotal" class="global-time-total">00:00</div>
+            </div>
+            <!-- Nouveau compteur de pause -->
+            <div id="pauseCounter" class="global-time-elapsed" style="font-size:1rem;">Pause: 00:00</div>
+            <div class="global-progress-container">
+              <div id="globalProgressBar" class="progress-bar"></div>
+            </div>
+          </div>
+          <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+          <div id="timeDisplay" class="time-display">00:00</div>
+          <div class="current-info">
+            <div id="currentSequence" class="current-sequence">Aucune séquence en cours</div>
+            <div id="currentSpeaker"></div>
+          </div>
+          <div class="sequence-timeline">
+            <div class="section-title">Chronologie des séquences</div>
+            <div id="sequenceTimeline" class="timeline-container"></div>
+          </div>
+        </div>
+        <div class="controls">
+          <button id="startTimer" disabled>Démarrer</button>
+          <button id="pauseTimer" disabled>Pause</button>
+          <button id="prevSequence" disabled>Séquence précédente</button>
+          <button id="nextSequence" disabled>Séquence suivante</button>
+          <button id="resetTimer" disabled>Réinitialiser</button>
+          <button id="endMeeting" disabled>Terminer la réunion</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="summary">
+      <div class="card summary-panel">
+        <div class="section-title">Résumé de la Présentation</div>
+        <div class="stats-container">
+          <div class="stat-card">
+            <div class="stat-title">Durée Totale Prévue</div>
+            <div id="totalPlanned" class="stat-value">0 min</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Temps Écoulé</div>
+            <div id="totalElapsed" class="stat-value">0 min</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Retard Global</div>
+            <div id="totalDelay" class="stat-value delay">0 min</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Temps en Pause</div>
+            <div id="pauseTime" class="stat-value">0 min</div>
+          </div>
+        </div>
+        <div class="section-title">Détail des Séquences</div>
+        <div id="sequenceSummary" class="sequence-list">
+          <!-- Le résumé des séquences sera ajouté ici -->
+        </div>
+        <div class="section-title">Pauses</div>
+        <div id="pauseSummary" class="sequence-list">
+          <!-- Détails des pauses -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="notification" class="notification">
+    <div id="notificationText">Attention ! 5 minutes restantes.</div>
+  </div>
+  <!-- Son d'alerte -->
+  <audio id="alertSound" preload="auto">
+    <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAnAABDOwAQEBgYICAgKCgwMDg4Pj5AQEhIUFBQWFhgYGhoaHB4eICAiIiQkJCYmKCgoKiosLC4uMDAwMjIyNDY2ODg6Ojo8PD4+Pj8/P7+//8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAA/0M7VQZWaQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//swAAAMwIj3DJkgCHu/5NjCZM4AABB8xwTG1gYQAAAB9MeE7/wY5ZhiGH+YIAA3jbj4D//+Uxf8ER7f4j///KYYCqqqqoAaaa9jGMPgICAYx/8iIiIiGRnZ2f/5ERERERn/pEVVVVUAAAAAAAG9tbdYCSF6KvyUEJkf5KEzGN4U0OZyYYfTNZmliM0qUTKpDRPu9Mx6PO0zmhc3FTZ3IMMpkbNvVVNQFTxfDnBM0z1JtUcqlUukTM8Iy2K2zFEXEwPQIZOmmlGKnv+7BcqLG5R/mf7j9n+a+diqpnzxVaNyqtYxfL8rlbrjFFovoTK7v9VbrWKKLmf//EGEHAXq9n///////ESVoYgV6vZ///////4lCEIAG9VoXgtgAAAJ+UhYRtpQEjQKBVpZtdnl1FUqkPFCpjKJmZmY0xHZ7PZ7MzMzCLZTKZTL/MzMzMzMzQiKZSZ/MzMzMzMwNX///////////KHEcUcRfRERH/////8RX/////xAUQFEBQAwyzLMswgAAAAAAAAAAAAAAP/70MBYAD72I1/T2ACLyMVv+mMAEJgaZiQMCgSEi0CICgKAgICAQEBQFDIpFxSKRUd9yhscWFShPUlgsJigoXoHsH0f/+h/////6A+j///oAAAP+gAAA//oAAA///////QADQJiO0AxHYaI7B9E8P/QAf////DQDEdhiOw0I7DEdgY7DRHaF9Edh//8V1gAAAAAAAAAAAAAAAAAAAAA=" type="audio/mpeg">
+  </audio>
+  <script>
+    class PresentationTimer {
+      constructor() {
+        this.sequences = [];
+        this.currentIndex = -1;
+        this.timer = null;
+        this.globalTimer = null;
+        this.startTime = 0;
+        this.elapsedTime = 0;
+        this.isPaused = false;
+        this.pauseTime = 0;
+        this.totalPauseTime = 0;
+        this.lastPauseStart = 0;
+        this.alertTime = 5;
+        this.alerted = false;
+        this.totalDelay = 0;
+        this.globalStartTime = 0;
+        this.globalElapsedTime = 0;
+        this.totalDuration = 60;
+        this.pauseHistory = [];
+      }
+
+      addSequence(name, speaker, duration) {
+        this.sequences.push({
+          name: name,
+          speaker: speaker,
+          duration: duration,
+          elapsed: 0,
+          delay: 0,
+          delayAlerted: false,
+          status: 'pending'
+        });
+        this.updateUI();
+      }
+
+      removeSequence(index) {
+        this.sequences.splice(index, 1);
+        this.updateUI();
+      }
+
+      clearSequences() {
+        this.sequences = [];
+        this.currentIndex = -1;
+        this.updateUI();
+      }
+
+      startPresentation() {
+        if (this.sequences.length === 0) return;
+        this.currentIndex = 0;
+        this.sequences[0].status = 'active';
+        this.globalStartTime = Date.now();
+        this.globalElapsedTime = 0;
+        this.totalPauseTime = 0;
+        this.pauseHistory = [];
+        const totalDurationInput = document.getElementById('totalDuration');
+        if (totalDurationInput && !isNaN(parseInt(totalDurationInput.value)) && parseInt(totalDurationInput.value) > 0) {
+          this.totalDuration = parseInt(totalDurationInput.value);
+        }
+        this.updateUI();
+        document.getElementById('startTimer').disabled = false;
+        document.getElementById('nextSequence').disabled = false;
+        document.getElementById('resetTimer').disabled = false;
+        document.getElementById('prevSequence').disabled = true;
+        document.getElementById('endMeeting').disabled = false;
+        this.globalTimer = setInterval(() => {
+          const now = Date.now();
+          this.globalElapsedTime = Math.floor((now - this.globalStartTime) / 1000);
+          this.updateTimerDisplay();
+        }, 1000);
+        if (window.innerWidth <= 768) {
+          selectTab('timer');
+        }
+      }
+
+      startTimer() {
+        if (this.currentIndex < 0 || this.timer) return;
+        if (this.isPaused) {
+          this.isPaused = false;
+          const pauseDuration = Date.now() - this.lastPauseStart;
+          this.totalPauseTime += pauseDuration;
+          this.pauseHistory.push({
+            start: this.lastPauseStart,
+            end: Date.now(),
+            duration: pauseDuration
+          });
+          this.startTime = Date.now() - this.pauseTime;
+        } else {
+          this.startTime = Date.now();
+          this.elapsedTime = 0;
+          this.alerted = false;
+          this.sequences[this.currentIndex].delayAlerted = false;
+        }
+        document.getElementById('startTimer').disabled = true;
+        document.getElementById('pauseTimer').disabled = false;
+        this.timer = setInterval(() => this.updateTimer(), 1000);
+      }
+
+      pauseTimer() {
+        if (!this.timer) return;
+        clearInterval(this.timer);
+        this.timer = null;
+        this.isPaused = true;
+        this.pauseTime = Date.now() - this.startTime;
+        this.lastPauseStart = Date.now();
+        document.getElementById('startTimer').disabled = false;
+        document.getElementById('pauseTimer').disabled = true;
+      }
+
+      resetTimer() {
+        this.stopTimer();
+        if (this.globalTimer) {
+          clearInterval(this.globalTimer);
+          this.globalTimer = null;
+        }
+        this.sequences.forEach(seq => {
+          seq.elapsed = 0;
+          seq.delay = 0;
+          seq.status = 'pending';
+          seq.delayAlerted = false;
+        });
+        this.currentIndex = -1;
+        this.totalDelay = 0;
+        this.globalElapsedTime = 0;
+        this.totalPauseTime = 0;
+        this.pauseHistory = [];
+        this.updateUI();
+        document.getElementById('startTimer').disabled = true;
+        document.getElementById('pauseTimer').disabled = true;
+        document.getElementById('nextSequence').disabled = true;
+        document.getElementById('resetTimer').disabled = true;
+        document.getElementById('prevSequence').disabled = true;
+        document.getElementById('endMeeting').disabled = true;
+      }
+
+      stopTimer() {
+        if (this.timer) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+        this.isPaused = false;
+        this.alerted = false;
+      }
+
+      nextSequence() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.sequences.length - 1) return;
+        const currentSeq = this.sequences[this.currentIndex];
+        currentSeq.status = 'completed';
+        const plannedDuration = currentSeq.duration * 60;
+        let diff = currentSeq.elapsed - plannedDuration;
+        currentSeq.delay = Math.floor(diff / 60);
+        this.totalDelay += currentSeq.delay;
+        if (diff < 0) {
+          const recovered = Math.abs(Math.floor(diff / 60));
+          if (recovered > 0) {
+            this.showDelayAlert("Vous avez récupéré " + recovered + " min de retard pour la séquence " + currentSeq.name);
+          }
+        }
+        this.currentIndex++;
+        this.sequences[this.currentIndex].status = 'active';
+        this.sequences[this.currentIndex].delayAlerted = false;
+        this.stopTimer();
+        this.elapsedTime = 0;
+        document.getElementById('startTimer').disabled = false;
+        document.getElementById('pauseTimer').disabled = true;
+        document.getElementById('prevSequence').disabled = (this.currentIndex <= 0);
+        document.getElementById('nextSequence').disabled = (this.currentIndex >= this.sequences.length - 1);
+        this.updateUI();
+      }
+
+      prevSequence() {
+        if (this.currentIndex <= 0) return;
+        this.stopTimer();
+        const currentSeq = this.sequences[this.currentIndex];
+        currentSeq.status = 'pending';
+        this.currentIndex--;
+        const prevSeq = this.sequences[this.currentIndex];
+        if (prevSeq.status === 'completed') {
+          this.totalDelay -= prevSeq.delay;
+          prevSeq.delay = 0;
+        }
+        prevSeq.status = 'active';
+        prevSeq.delayAlerted = false;
+        this.isPaused = true;
+        this.pauseTime = prevSeq.elapsed * 1000;
+        this.lastPauseStart = Date.now();
+        document.getElementById('startTimer').disabled = false;
+        document.getElementById('pauseTimer').disabled = true;
+        document.getElementById('nextSequence').disabled = false;
+        document.getElementById('prevSequence').disabled = (this.currentIndex <= 0);
+        this.updateUI();
+      }
+
+      endMeeting() {
+        this.stopTimer();
+        if (this.globalTimer) {
+          clearInterval(this.globalTimer);
+          this.globalTimer = null;
+        }
+        const now = Date.now();
+        this.globalElapsedTime = Math.floor((now - this.globalStartTime) / 1000);
+        this.updateUI();
+        document.getElementById('startTimer').disabled = true;
+        document.getElementById('pauseTimer').disabled = true;
+        document.getElementById('prevSequence').disabled = true;
+        document.getElementById('nextSequence').disabled = true;
+        document.getElementById('resetTimer').disabled = true;
+        document.getElementById('endMeeting').disabled = true;
+      }
+
+      updateTimer() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.sequences.length) return;
+        const now = Date.now();
+        if (!this.isPaused) {
+          this.elapsedTime = Math.floor((now - this.startTime) / 1000);
+          const currentSeq = this.sequences[this.currentIndex];
+          currentSeq.elapsed = this.elapsedTime;
+          const seqTotalSeconds = currentSeq.duration * 60;
+          const remainingSeconds = seqTotalSeconds - this.elapsedTime;
+          const alertTimeSeconds = this.alertTime * 60;
+          if (!currentSeq.delayAlerted && this.elapsedTime > seqTotalSeconds) {
+            currentSeq.delayAlerted = true;
+            const delayMinutes = Math.floor((this.elapsedTime - seqTotalSeconds) / 60);
+            this.showDelayAlert("Vous commencez à être en retard pour la séquence " + currentSeq.name + " (+" + delayMinutes + " min)");
+          }
+          if (remainingSeconds <= alertTimeSeconds && !this.alerted && remainingSeconds >= 0) {
+            this.showAlert();
+            this.alerted = true;
+          }
+        }
+        this.updateUI();
+      }
+
+      showAlert() {
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        if(notificationText) {
+          notificationText.textContent = `Attention ! ${this.alertTime} minutes restantes.`;
+        }
+        if(notification) notification.classList.add('show');
+        const alertSound = document.getElementById('alertSound');
+        if(alertSound) alertSound.play();
+        setTimeout(() => {
+          if(notification) notification.classList.remove('show');
+        }, 5000);
+      }
+      
+      showDelayAlert(message) {
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        if(notificationText) {
+          notificationText.textContent = message;
+        }
+        if(notification) notification.classList.add('show');
+        setTimeout(() => {
+          if(notification) notification.classList.remove('show');
+        }, 5000);
+      }
+
+      updateUI() {
+        this.updateSequencesList();
+        this.updateTimerDisplay();
+        this.updateSummary();
+      }
+
+      updateSequencesList() {
+        const sequencesContainer = document.getElementById('sequences');
+        if (!sequencesContainer) return;
+        sequencesContainer.innerHTML = '';
+        if (this.sequences.length === 0) {
+          sequencesContainer.innerHTML = '<div class="sequence-item">Aucune séquence définie</div>';
+          return;
+        }
+        this.sequences.forEach((seq, index) => {
+          const item = document.createElement('div');
+          item.className = 'sequence-item';
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = seq.name;
+          const speakerSpan = document.createElement('span');
+          speakerSpan.textContent = seq.speaker || '-';
+          const durationSpan = document.createElement('span');
+          durationSpan.textContent = `${seq.duration} min`;
+          const removeBtn = document.createElement('button');
+          removeBtn.textContent = 'Supprimer';
+          removeBtn.className = 'btn-warning';
+          removeBtn.onclick = () => this.removeSequence(index);
+          item.appendChild(nameSpan);
+          item.appendChild(speakerSpan);
+          item.appendChild(durationSpan);
+          item.appendChild(removeBtn);
+          sequencesContainer.appendChild(item);
+        });
+      }
+
+      updateTimerDisplay() {
+        const timeDisplay = document.getElementById('timeDisplay');
+        const progressBar = document.getElementById('progressBar');
+        const currentSequenceElem = document.getElementById('currentSequence');
+        const currentSpeakerElem = document.getElementById('currentSpeaker');
+        const globalElapsedElem = document.getElementById('globalElapsed');
+        const globalTotalElem = document.getElementById('globalTotal');
+        const globalProgressBar = document.getElementById('globalProgressBar');
+        const pauseCounterElem = document.getElementById('pauseCounter');
+        if (!timeDisplay || !progressBar || !currentSequenceElem || !globalElapsedElem || !globalTotalElem || !globalProgressBar || !pauseCounterElem) return;
+        const totalMinutes = this.totalDuration;
+        const totalSeconds = totalMinutes * 60;
+        const globalElapsedSeconds = this.globalElapsedTime;
+        const globalHours = Math.floor(globalElapsedSeconds / 3600);
+        const globalMinutes = Math.floor((globalElapsedSeconds % 3600) / 60);
+        const globalSeconds = globalElapsedSeconds % 60;
+        const totalHours = Math.floor(totalSeconds / 3600);
+        const totalMinutesFormatted = Math.floor((totalSeconds % 3600) / 60);
+        globalElapsedElem.textContent = `${globalHours > 0 ? globalHours + 'h' : ''}${globalMinutes.toString().padStart(2, '0')}:${globalSeconds.toString().padStart(2, '0')}`;
+        globalTotalElem.textContent = `${totalHours > 0 ? totalHours + 'h' : ''}${totalMinutesFormatted.toString().padStart(2, '0')}:00`;
+        const globalProgressPercent = Math.min(100, (globalElapsedSeconds / totalSeconds) * 100);
+        globalProgressBar.style.width = `${globalProgressPercent}%`;
+        if (globalElapsedSeconds > totalSeconds) {
+          globalProgressBar.classList.add('progress-warning');
+          globalElapsedElem.classList.add('time-warning');
+        } else {
+          globalProgressBar.classList.remove('progress-warning');
+          globalElapsedElem.classList.remove('time-warning');
+        }
+        if (this.isPaused) {
+          let pauseSeconds = Math.floor((Date.now() - this.lastPauseStart) / 1000);
+          let pauseMinutes = Math.floor(pauseSeconds / 60);
+          let pauseSecs = pauseSeconds % 60;
+          pauseCounterElem.textContent = `Pause: ${pauseMinutes.toString().padStart(2, '0')}:${pauseSecs.toString().padStart(2, '0')}`;
+        } else {
+          pauseCounterElem.textContent = `Pause: 00:00`;
+        }
+        if (this.currentIndex < 0 || this.currentIndex >= this.sequences.length) {
+          timeDisplay.textContent = '00:00';
+          timeDisplay.classList.remove('time-warning');
+          progressBar.style.width = '0%';
+          progressBar.classList.remove('progress-warning');
+          currentSequenceElem.textContent = 'Aucune séquence en cours';
+          currentSpeakerElem.textContent = '';
+          return;
+        }
+        const currentSeq = this.sequences[this.currentIndex];
+        const seqTotalSeconds = currentSeq.duration * 60;
+        const seqElapsedSeconds = currentSeq.elapsed;
+        const remainingSeconds = seqTotalSeconds - seqElapsedSeconds;
+        let sign = '';
+        let absRemainingSeconds = remainingSeconds;
+        if (remainingSeconds < 0) {
+          sign = '-';
+          absRemainingSeconds = Math.abs(remainingSeconds);
+        }
+        let minutes = Math.floor(absRemainingSeconds / 60);
+        let seconds = absRemainingSeconds % 60;
+        timeDisplay.textContent = `${sign}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const progressPercent = Math.min(100, (seqElapsedSeconds / seqTotalSeconds) * 100);
+        progressBar.style.width = `${progressPercent}%`;
+        currentSequenceElem.textContent = currentSeq.name;
+        currentSpeakerElem.textContent = currentSeq.speaker ? `Intervenant: ${currentSeq.speaker}` : '';
+        const alertTimeSeconds = this.alertTime * 60;
+        if (remainingSeconds <= alertTimeSeconds || remainingSeconds < 0) {
+          timeDisplay.classList.add('time-warning');
+          progressBar.classList.add('progress-warning');
+        } else {
+          timeDisplay.classList.remove('time-warning');
+          progressBar.classList.remove('progress-warning');
+        }
+        this.updateSequenceTimeline();
+      }
+
+      updateSequenceTimeline() {
+        const timelineContainer = document.getElementById('sequenceTimeline');
+        if (!timelineContainer) return;
+        timelineContainer.innerHTML = '';
+        this.sequences.forEach((seq, index) => {
+          const item = document.createElement('div');
+          item.className = 'timeline-item';
+          const marker = document.createElement('div');
+          marker.className = 'timeline-marker';
+          if (index < this.currentIndex) {
+            marker.classList.add('past');
+          } else if (index === this.currentIndex) {
+            marker.classList.add('current');
+          } else {
+            marker.classList.add('future');
+          }
+          const content = document.createElement('div');
+          content.className = 'timeline-content';
+          const header = document.createElement('div');
+          header.className = 'timeline-header';
+          const title = document.createElement('div');
+          title.className = 'timeline-title';
+          title.textContent = seq.name;
+          const speaker = document.createElement('div');
+          speaker.className = 'timeline-speaker';
+          if (seq.speaker) {
+            speaker.textContent = seq.speaker;
+          }
+          header.appendChild(title);
+          if (seq.speaker) {
+            header.appendChild(speaker);
+          }
+          const timeInfo = document.createElement('div');
+          timeInfo.className = 'timeline-time';
+          const planned = document.createElement('div');
+          planned.className = 'timeline-planned';
+          planned.textContent = `Prévu: ${seq.duration} min`;
+          const actual = document.createElement('div');
+          actual.className = 'timeline-actual';
+          const elapsedMinutes = Math.floor(seq.elapsed / 60);
+          const elapsedSeconds = seq.elapsed % 60;
+          if (index < this.currentIndex) {
+            actual.textContent = `Réel: ${elapsedMinutes}m ${elapsedSeconds}s`;
+            if (seq.elapsed > seq.duration * 60) {
+              actual.classList.add('overrun');
+            }
+          } else if (index === this.currentIndex) {
+            actual.textContent = `En cours: ${elapsedMinutes}m ${elapsedSeconds}s`;
+            if (seq.elapsed > seq.duration * 60) {
+              actual.classList.add('overrun');
+            }
+          } else {
+            actual.textContent = 'À venir';
+          }
+          timeInfo.appendChild(planned);
+          timeInfo.appendChild(actual);
+          content.appendChild(header);
+          content.appendChild(timeInfo);
+          item.appendChild(marker);
+          item.appendChild(content);
+          timelineContainer.appendChild(item);
+        });
+      }
+
+      updateSummary() {
+        const totalPlannedElem = document.getElementById('totalPlanned');
+        const totalElapsedElem = document.getElementById('totalElapsed');
+        const totalDelayElem = document.getElementById('totalDelay');
+        const sequenceSummaryElem = document.getElementById('sequenceSummary');
+        if (!totalPlannedElem || !totalElapsedElem || !totalDelayElem || !sequenceSummaryElem) return;
+        let totalPlanned = 0;
+        let totalElapsed = 0;
+        this.sequences.forEach(seq => {
+          totalPlanned += seq.duration;
+          totalElapsed += Math.floor(seq.elapsed / 60);
+        });
+        totalPlannedElem.textContent = `${totalPlanned} min`;
+        totalElapsedElem.textContent = `${totalElapsed} min`;
+        let activeDelay = 0;
+        if (this.currentIndex >= 0 && this.currentIndex < this.sequences.length) {
+          const activeSeq = this.sequences[this.currentIndex];
+          // Si la séquence active n'est pas en retard, on ne compte pas de retard
+          activeDelay = Math.max(0, Math.floor((activeSeq.elapsed - activeSeq.duration * 60) / 60));
+        }
+        totalDelayElem.textContent = `${this.totalDelay + activeDelay} min`;
+        sequenceSummaryElem.innerHTML = '';
+        if (this.sequences.length === 0) {
+          sequenceSummaryElem.innerHTML = '<div class="sequence-summary">Aucune séquence définie</div>';
+        } else {
+          this.sequences.forEach(seq => {
+            const item = document.createElement('div');
+            item.className = 'sequence-summary';
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = seq.name;
+            const durationSpan = document.createElement('span');
+            durationSpan.textContent = `${seq.duration} min planifiés`;
+            const elapsedSpan = document.createElement('span');
+            const elapsedMinutes = Math.floor(seq.elapsed / 60);
+            elapsedSpan.textContent = `${elapsedMinutes} min utilisés`;
+            const delaySpan = document.createElement('span');
+            if (seq.delay !== 0) {
+              delaySpan.textContent = `${seq.delay > 0 ? '+' : ''}${seq.delay} min`;
+              delaySpan.className = 'sequence-overrun';
+            } else {
+              delaySpan.textContent = `0 min`;
+            }
+            item.appendChild(nameSpan);
+            item.appendChild(durationSpan);
+            item.appendChild(elapsedSpan);
+            item.appendChild(delaySpan);
+            sequenceSummaryElem.appendChild(item);
+          });
+        }
+        const pauseTimeElem = document.getElementById('pauseTime');
+        if (pauseTimeElem) {
+          const totalPauseMinutes = Math.floor(this.totalPauseTime / 60000);
+          pauseTimeElem.textContent = `${totalPauseMinutes} min`;
+        }
+        const pauseSummaryElem = document.getElementById('pauseSummary');
+        if (pauseSummaryElem) {
+          pauseSummaryElem.innerHTML = '';
+          if (this.pauseHistory.length === 0) {
+            pauseSummaryElem.innerHTML = '<div class="pause-item">Aucune pause effectuée</div>';
+          } else {
+            this.pauseHistory.forEach((pause, index) => {
+              const seconds = Math.floor(pause.duration / 1000);
+              const minutes = Math.floor(seconds / 60);
+              const secs = seconds % 60;
+              const pauseItem = document.createElement('div');
+              pauseItem.className = 'pause-item';
+              pauseItem.textContent = `Pause ${index + 1}: ${minutes} min ${secs} s`;
+              pauseSummaryElem.appendChild(pauseItem);
+            });
+          }
+        }
+      }
+
+      setAlertTime(minutes) {
+        this.alertTime = minutes;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const presentationTimer = new PresentationTimer();
+
+      document.getElementById('addSequence').addEventListener('click', () => {
+        const nameElem = document.getElementById('sequenceName');
+        const speakerElem = document.getElementById('speakerName');
+        const durationElem = document.getElementById('sequenceDuration');
+        if (!nameElem || !durationElem) return;
+        const name = nameElem.value.trim();
+        const speaker = speakerElem ? speakerElem.value.trim() : '';
+        const duration = parseInt(durationElem.value);
+        if (!name || isNaN(duration) || duration <= 0) {
+          alert('Veuillez entrer un nom de séquence valide et une durée positive.');
+          return;
+        }
+        presentationTimer.addSequence(name, speaker, duration);
+        nameElem.value = '';
+        if (speakerElem) speakerElem.value = '';
+        durationElem.value = '10';
+      });
+
+      document.getElementById('clearSequences').addEventListener('click', () => {
+        if (confirm('Êtes-vous sûr de vouloir supprimer toutes les séquences ?')) {
+          presentationTimer.clearSequences();
+        }
+      });
+
+      document.getElementById('startPresentation').addEventListener('click', () => {
+        if (presentationTimer.sequences.length === 0) {
+          alert('Veuillez ajouter au moins une séquence avant de commencer.');
+          return;
+        }
+        const alertTime = parseInt(document.getElementById('alertTime').value);
+        if (!isNaN(alertTime) && alertTime > 0) {
+          presentationTimer.setAlertTime(alertTime);
+        }
+        presentationTimer.startPresentation();
+      });
+
+      document.getElementById('startTimer').addEventListener('click', () => {
+        presentationTimer.startTimer();
+      });
+
+      document.getElementById('pauseTimer').addEventListener('click', () => {
+        presentationTimer.pauseTimer();
+      });
+
+      document.getElementById('prevSequence').addEventListener('click', () => {
+        presentationTimer.prevSequence();
+      });
+
+      document.getElementById('nextSequence').addEventListener('click', () => {
+        presentationTimer.nextSequence();
+      });
+
+      document.getElementById('resetTimer').addEventListener('click', () => {
+        if (confirm('Êtes-vous sûr de vouloir réinitialiser le minuteur ?')) {
+          presentationTimer.resetTimer();
+        }
+      });
+
+      document.getElementById('endMeeting').addEventListener('click', () => {
+        presentationTimer.endMeeting();
+      });
+
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.getAttribute('data-tab');
+          selectTab(tabName);
+        });
+      });
+
+      function selectTab(tabName) {
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+      }
+    });
+  </script>
+</body>
+</html>
