@@ -534,6 +534,43 @@
         this.pauseHistory = [];
       }
 
+      // Sauvegarde l'état dans localStorage
+      saveState() {
+        const state = {
+          sequences: this.sequences,
+          currentIndex: this.currentIndex,
+          totalDelay: this.totalDelay,
+          totalPauseTime: this.totalPauseTime,
+          globalStartTime: this.globalStartTime,
+          globalElapsedTime: this.globalElapsedTime,
+          isPaused: this.isPaused,
+          pauseTime: this.pauseTime,
+          lastPauseStart: this.lastPauseStart
+        };
+        localStorage.setItem('meetingState', JSON.stringify(state));
+      }
+
+      // Charge l'état depuis localStorage
+      loadState() {
+        const saved = localStorage.getItem('meetingState');
+        if (saved) {
+          try {
+            const state = JSON.parse(saved);
+            this.sequences = state.sequences || [];
+            this.currentIndex = state.currentIndex !== undefined ? state.currentIndex : -1;
+            this.totalDelay = state.totalDelay || 0;
+            this.totalPauseTime = state.totalPauseTime || 0;
+            this.globalStartTime = state.globalStartTime || Date.now();
+            this.globalElapsedTime = state.globalElapsedTime || 0;
+            this.isPaused = state.isPaused || false;
+            this.pauseTime = state.pauseTime || 0;
+            this.lastPauseStart = state.lastPauseStart || 0;
+          } catch (e) {
+            console.error("Erreur lors du chargement de l'état :", e);
+          }
+        }
+      }
+
       addSequence(name, speaker, duration) {
         this.sequences.push({
           name: name,
@@ -644,6 +681,7 @@
         document.getElementById('resetTimer').disabled = true;
         document.getElementById('prevSequence').disabled = true;
         document.getElementById('endMeeting').disabled = true;
+        localStorage.removeItem('meetingState');
       }
 
       stopTimer() {
@@ -747,26 +785,26 @@
       showAlert() {
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
-        if(notificationText) {
+        if (notificationText) {
           notificationText.textContent = `Attention ! ${this.alertTime} minutes restantes.`;
         }
-        if(notification) notification.classList.add('show');
+        if (notification) notification.classList.add('show');
         const alertSound = document.getElementById('alertSound');
-        if(alertSound) alertSound.play();
+        if (alertSound) alertSound.play();
         setTimeout(() => {
-          if(notification) notification.classList.remove('show');
+          if (notification) notification.classList.remove('show');
         }, 5000);
       }
       
       showDelayAlert(message) {
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
-        if(notificationText) {
+        if (notificationText) {
           notificationText.textContent = message;
         }
-        if(notification) notification.classList.add('show');
+        if (notification) notification.classList.add('show');
         setTimeout(() => {
-          if(notification) notification.classList.remove('show');
+          if (notification) notification.classList.remove('show');
         }, 5000);
       }
 
@@ -774,6 +812,7 @@
         this.updateSequencesList();
         this.updateTimerDisplay();
         this.updateSummary();
+        this.saveState(); // Sauvegarde l'état après chaque mise à jour
       }
 
       updateSequencesList() {
@@ -960,7 +999,6 @@
         let activeDelay = 0;
         if (this.currentIndex >= 0 && this.currentIndex < this.sequences.length) {
           const activeSeq = this.sequences[this.currentIndex];
-          // Si la séquence active n'est pas en retard, on ne compte pas de retard
           activeDelay = Math.max(0, Math.floor((activeSeq.elapsed - activeSeq.duration * 60) / 60));
         }
         totalDelayElem.textContent = `${this.totalDelay + activeDelay} min`;
@@ -1023,6 +1061,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const presentationTimer = new PresentationTimer();
+      // Charger l'état sauvegardé (s'il existe)
+      presentationTimer.loadState();
+      presentationTimer.updateUI();
 
       document.getElementById('addSequence').addEventListener('click', () => {
         const nameElem = document.getElementById('sequenceName');
